@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Image, Smile, Heart, Bookmark, Trash2, Ghost, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
@@ -35,6 +35,15 @@ export const Home = () => {
   const { user } = useAuthStore()
   const { addToast } = useToastStore()
 
+  const fetchPosts = useCallback(async () => {
+    const { data } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (data) setPosts(data)
+  }, [])
+
   useEffect(() => {
     fetchPosts()
 
@@ -50,16 +59,7 @@ export const Home = () => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user])
-
-  const fetchPosts = async () => {
-    const { data, error: _error } = await supabase
-      .from('posts')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (data) setPosts(data)
-  }
+  }, [user, fetchPosts])
 
   const handlePost = async () => {
     if (!content.trim() && !imageFile) return
@@ -87,8 +87,8 @@ export const Home = () => {
       setImageFile(null)
       addToast('Thought captured', 'success')
       fetchPosts()
-    } catch (error: any) {
-      addToast(error.message || 'Failed to capture thought', 'error')
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Failed to capture thought', 'error')
     } finally {
       setLoading(false)
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '@/services/supabase'
@@ -19,11 +19,7 @@ export const Stories = () => {
   const [uploading, setUploading] = useState(false)
   const { addToast } = useToastStore()
 
-  useEffect(() => {
-    fetchStories()
-  }, [])
-
-  const fetchStories = async () => {
+  const fetchStories = useCallback(async () => {
     const { data } = await supabase
       .from('stories')
       .select('*')
@@ -31,7 +27,11 @@ export const Stories = () => {
       .order('created_at', { ascending: false })
     
     if (data) setStories(data)
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchStories()
+  }, [fetchStories])
 
   const handleStoryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -52,8 +52,8 @@ export const Stories = () => {
       
       addToast('Story shared to your sanctuary', 'success')
       fetchStories()
-    } catch (error: any) {
-      addToast(error.message || 'Failed to upload story', 'error')
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Failed to upload story', 'error')
     } finally {
       setUploading(false)
     }

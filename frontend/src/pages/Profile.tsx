@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { User, Settings, LogOut, Shield, Heart, Archive, Camera } from 'lucide-react'
 import { supabase } from '@/services/supabase'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -14,11 +14,7 @@ export const Profile = () => {
   const { user, signOut } = useAuthStore()
   const [profile, setProfile] = useState<Profile | null>(null)
 
-  useEffect(() => {
-    if (user) fetchProfile()
-  }, [user])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     const { data } = await supabase
       .from('profiles')
       .select('*')
@@ -26,7 +22,11 @@ export const Profile = () => {
       .single()
     
     if (data) setProfile(data)
-  }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (user) fetchProfile()
+  }, [user, fetchProfile])
 
   return (
     <div className="py-10 space-y-12">
